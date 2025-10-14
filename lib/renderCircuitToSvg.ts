@@ -8,6 +8,7 @@ import {
 import { render3dPng } from "./render3dPng"
 import { Buffer } from "node:buffer"
 import * as vectorizerMod from "@neplex/vectorizer"
+import { ensureDocSansFont } from "./embeddedFont"
 
 export interface RenderOptions {
   backgroundColor?: string
@@ -41,15 +42,15 @@ export async function renderCircuitToSvg(
   const zoom = Number.isFinite(zoomMultiplier) ? zoomMultiplier : 1.2
 
   if (svgType === "assembly") {
-    return convertCircuitJsonToAssemblySvg(circuitJson)
+    return ensureDocSansFont(convertCircuitJsonToAssemblySvg(circuitJson))
   }
 
   if (svgType === "pcb") {
-    return convertCircuitJsonToPcbSvg(circuitJson)
+    return ensureDocSansFont(convertCircuitJsonToPcbSvg(circuitJson))
   }
 
   if (svgType === "schematic") {
-    return convertCircuitJsonToSchematicSvg(circuitJson)
+    return ensureDocSansFont(convertCircuitJsonToSchematicSvg(circuitJson))
   }
 
   if (svgType === "schsim") {
@@ -59,17 +60,19 @@ export async function renderCircuitToSvg(
       )
     }
 
-    return convertCircuitJsonToSchematicSimulationSvg({
-      circuitJson,
-      simulation_experiment_id: options.simulationExperimentId,
-      simulation_transient_voltage_graph_ids:
-        options.simulationTransientVoltageGraphIds,
-      schematicHeightRatio: options.schematicHeightRatio,
-    })
+    return ensureDocSansFont(
+      convertCircuitJsonToSchematicSimulationSvg({
+        circuitJson,
+        simulation_experiment_id: options.simulationExperimentId,
+        simulation_transient_voltage_graph_ids:
+          options.simulationTransientVoltageGraphIds,
+        schematicHeightRatio: options.schematicHeightRatio,
+      }),
+    )
   }
 
   if (svgType === "pinout") {
-    return convertCircuitJsonToPinoutSvg(circuitJson)
+    return ensureDocSansFont(convertCircuitJsonToPinoutSvg(circuitJson))
   }
 
   if (svgType === "3d") {
