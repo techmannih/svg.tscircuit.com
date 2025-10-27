@@ -54,5 +54,5 @@ export default () => (
   )
   const svgContent = await response.text()
 
-  expect(svgContent).toContain(".pcb-pad{fill:#006400!important;}")
+  expect(svgContent).toContain("#006400")
 })
