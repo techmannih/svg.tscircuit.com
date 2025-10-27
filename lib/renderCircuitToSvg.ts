@@ -52,11 +52,9 @@ export async function renderCircuitToSvg(
         ? convertCircuitJsonToPcbSvg(circuitJson, { showSolderMask })
         : convertCircuitJsonToPcbSvg(circuitJson)
 
-    if (showSolderMask === true) {
-      return applySolderMaskPadColor(pcbSvg, "#006400")
-    }
-
-    return pcbSvg
+    return showSolderMask === true
+      ? applySolderMaskPadColor(pcbSvg, "#006400")
+      : pcbSvg
   }
 
   if (svgType === "schematic") {
@@ -124,17 +122,23 @@ export async function renderCircuitToSvg(
   throw new Error(`Invalid SVG type: ${svgType}`)
 }
 
-const PCB_PAD_CLASS_REGEX =
-  /<([a-zA-Z]+)([^>]*?\bclass="[^"]*\bpcb-pad\b[^"]*"[^>]*?)(\s*\/?)/g
-
 function applySolderMaskPadColor(svg: string, color: string): string {
-  return svg.replace(PCB_PAD_CLASS_REGEX, (_fullMatch, tag, attrs, closing) => {
-    const fillAttrRegex = /(\sfill\s*=\s*")[^"]*(")/i
+  const styleRule = `.pcb-pad{fill:${color}!important;}`
+  const styleTagRegex = /<style>([\s\S]*?)<\/style>/
 
-    const updatedAttrs = fillAttrRegex.test(attrs)
-      ? attrs.replace(fillAttrRegex, `$1${color}$2`)
-      : `${attrs} fill="${color}"`
+  if (styleTagRegex.test(svg)) {
+    return svg.replace(styleTagRegex, (_match, content) => {
+      if (content.includes(styleRule)) {
+        return `<style>${content}</style>`
+      }
 
-    return `<${tag}${updatedAttrs}${closing}>`
-  })
+      const separator = content.trim().length > 0 ? "\n" : ""
+      return `<style>${content}${separator}${styleRule}</style>`
+    })
+  }
+
+  return svg.replace(
+    /<svg([^>]*)>/,
+    `<svg$1><style>${styleRule}</style>`,
+  )
 }

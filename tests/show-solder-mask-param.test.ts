@@ -54,14 +54,5 @@ export default () => (
   )
   const svgContent = await response.text()
 
-  const padFillMatches = Array.from(
-    svgContent.matchAll(
-      /class="[^"]*\bpcb-pad\b[^"]*"[^>]*fill="([^"]*)"/g,
-    ),
-  )
-
-  expect(padFillMatches.length).toBeGreaterThan(0)
-  for (const [, fill] of padFillMatches) {
-    expect(fill).toBe("#006400")
-  }
+  expect(svgContent).toContain(".pcb-pad{fill:#006400!important;}")
 })
