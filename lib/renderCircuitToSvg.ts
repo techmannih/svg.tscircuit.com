@@ -49,7 +49,10 @@ export async function renderCircuitToSvg(
   if (svgType === "pcb") {
     const pcbSvg =
       typeof showSolderMask === "boolean"
-        ? convertCircuitJsonToPcbSvg(circuitJson, { showSolderMask })
+        ? convertCircuitJsonToPcbSvg(
+            circuitJson,
+            { showSolderMask } as Parameters<typeof convertCircuitJsonToPcbSvg>[1],
+          )
         : convertCircuitJsonToPcbSvg(circuitJson)
 
     return showSolderMask === true
