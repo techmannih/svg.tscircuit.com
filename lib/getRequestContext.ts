@@ -2,6 +2,30 @@ import { parseFsMapParam } from "./parseFsMapParam"
 import { isFsMapRecord } from "./fsMap"
 import type { RequestContext } from "./RequestContext"
 
+const TRUE_BOOLEAN_STRINGS = new Set(["1", "true", "yes", "on"])
+const FALSE_BOOLEAN_STRINGS = new Set(["0", "false", "no", "off"])
+
+const parseBooleanInput = (value: unknown): boolean | undefined => {
+  if (typeof value === "boolean") {
+    return value
+  }
+  if (typeof value === "number") {
+    if (value === 1) return true
+    if (value === 0) return false
+    return undefined
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase()
+    if (TRUE_BOOLEAN_STRINGS.has(normalized)) {
+      return true
+    }
+    if (FALSE_BOOLEAN_STRINGS.has(normalized)) {
+      return false
+    }
+  }
+  return undefined
+}
+
 /**
  * Parses the request and builds a RequestContext object.
  * Returns either a RequestContext or an error Response if parsing fails.
@@ -25,6 +49,14 @@ export async function getRequestContext(
   ctx.projectBaseUrl = url.searchParams.get("project_base_url") || undefined
   ctx.mainComponentPath =
     url.searchParams.get("main_component_path") || undefined
+
+  const showSolderMaskQuery = url.searchParams.get("showsoldermask")
+  if (showSolderMaskQuery != null) {
+    const parsedShowSolderMask = parseBooleanInput(showSolderMaskQuery)
+    if (parsedShowSolderMask !== undefined) {
+      ctx.showSolderMask = parsedShowSolderMask
+    }
+  }
 
   // Parse fsMap from query parameter
   const fsMapQueryParam = url.searchParams.get("fs_map")
@@ -121,6 +153,21 @@ export async function getRequestContext(
     ctx.pngWidth = body.png_width
     ctx.pngHeight = body.png_height
     ctx.pngDensity = body.png_density
+
+    if (Object.prototype.hasOwnProperty.call(body, "show_solder_mask")) {
+      const showSolderMaskValue = body.show_solder_mask
+      if (typeof showSolderMaskValue === "boolean") {
+        ctx.showSolderMask = showSolderMaskValue
+      } else {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: "Invalid show_solder_mask provided in request body",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        )
+      }
+    }
 
     const simulationExperimentId =
       body.simulation_experiment_id ?? body.simulationExperimentId
