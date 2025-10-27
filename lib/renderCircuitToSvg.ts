@@ -13,6 +13,7 @@ export interface RenderOptions {
   backgroundColor?: string
   backgroundOpacity?: number
   zoomMultiplier?: number
+  showSolderMask?: boolean
   simulationExperimentId?: string
   simulationTransientVoltageGraphIds?: string[]
   schematicHeightRatio?: number
@@ -35,6 +36,7 @@ export async function renderCircuitToSvg(
     backgroundColor = "#fff",
     backgroundOpacity = 0.0,
     zoomMultiplier = 1.2,
+    showSolderMask,
   } = options
 
   const bgOpacity = Number.isFinite(backgroundOpacity) ? backgroundOpacity : 0.0
@@ -45,7 +47,16 @@ export async function renderCircuitToSvg(
   }
 
   if (svgType === "pcb") {
-    return convertCircuitJsonToPcbSvg(circuitJson)
+    const pcbSvg =
+      typeof showSolderMask === "boolean"
+        ? convertCircuitJsonToPcbSvg(circuitJson, { showSolderMask })
+        : convertCircuitJsonToPcbSvg(circuitJson)
+
+    if (showSolderMask === true) {
+      return applySolderMaskPadColor(pcbSvg, "#006400")
+    }
+
+    return pcbSvg
   }
 
   if (svgType === "schematic") {
@@ -111,4 +122,19 @@ export async function renderCircuitToSvg(
   }
 
   throw new Error(`Invalid SVG type: ${svgType}`)
+}
+
+const PCB_PAD_CLASS_REGEX =
+  /<([a-zA-Z]+)([^>]*?\bclass="[^"]*\bpcb-pad\b[^"]*"[^>]*?)(\s*\/?)/g
+
+function applySolderMaskPadColor(svg: string, color: string): string {
+  return svg.replace(PCB_PAD_CLASS_REGEX, (_fullMatch, tag, attrs, closing) => {
+    const fillAttrRegex = /(\sfill\s*=\s*")[^"]*(")/i
+
+    const updatedAttrs = fillAttrRegex.test(attrs)
+      ? attrs.replace(fillAttrRegex, `$1${color}$2`)
+      : `${attrs} fill="${color}"`
+
+    return `<${tag}${updatedAttrs}${closing}>`
+  })
 }
