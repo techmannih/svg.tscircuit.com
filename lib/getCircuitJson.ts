@@ -9,6 +9,7 @@ import { getPlatformConfig as getPlatformConfigFromEval } from "@tscircuit/eval"
 const getPlatformConfig = (): PlatformConfig => {
   return {
     ...getPlatformConfigFromEval(),
+    partsEngineDisabled: true,
   }
 }
 
